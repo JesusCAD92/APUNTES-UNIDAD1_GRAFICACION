@@ -1,152 +1,199 @@
-# APUNTES-UNIDAD1_GRAFICACION
-# Unidad I. Introducción a la Graficación por Computadora
-Esta unidad establece las bases teóricas, matemáticas y técnicas para comprender cómo una computadora genera imágenes, desde su evolución histórica hasta la manipulación algorítmica de geometría en entornos 3D profesionales.
-## 1.1 Historia y evolución de la graficación
-La graficación ha pasado de representar simples puntos en un osciloscopio a simular la realidad mediante técnicas avanzadas como el Ray Tracing (Trazado de rayos). Esta evolución se divide en hitos clave:
+# Unidad I. Interfaz gráfica de usuario
+## Reporte Técnico: Escenario Procedural con Animación de Cámara
+**Proyecto Integrador - Unidad I Materia:** Graficación por Computadora / Tópicos Avanzados
 
-* Década de los 50: Surgimiento de sistemas como el SAGE (Semi-Automatic Ground Environment), diseñado para defensa aérea, el cual fue pionero en el uso de monitores de vectores para representar datos de radar.
-<img width="250" height="182" alt="image" src="https://github.com/user-attachments/assets/d033accd-b534-442f-98f0-668f0aa0906f" />
+**Software:** Blender 4.x, Python (bpy), Git Bash
+## 1. Objetivo del Módulo
+Desarrollar un entorno tridimensional generado proceduralmente que integre la creación automática de geometría (paredes y suelos) y una animación de cámara dinámica. Se busca simular el movimiento humano (Head Bobbing) y el balanceo lateral mientras la cámara recorre un camino en zigzag definido matemáticamente mediante funciones senoidales.
+## 2. Arquitectura de la Escena y Tiempos
+Antes de generar la geometría, el script configura el lienzo tridimensional y el rango de la línea de tiempo. En Blender, la escena controla la duración de la animación.
+Instrucciones:
 
----
+* **Limpieza de Escena:** Eliminar objetos previos para evitar duplicidad.
 
-* Sutherland y el Sketchpad (1963): Ivan Sutherland introdujo el primer sistema que permitía la manipulación de objetos mediante un lápiz óptico, estableciendo las bases de las estructuras de datos gráficas y la interactividad moderna.
-<img width="976" height="549" alt="image" src="https://github.com/user-attachments/assets/918ab39c-be19-4baa-96f8-544a0aa4aaee" />
-
----
-
-* Normalización y GPU: Con el tiempo surgieron estándares como OpenGL y DirectX, lo que permitió que el hardware especializado (GPUs) se encargara de los cálculos matemáticos pesados, liberando a la CPU de estas tareas.
-<img width="690" height="345" alt="image" src="https://github.com/user-attachments/assets/3d66ba74-c934-4e42-90d0-050a67fd601c" />
+* **Configuración de Frames:** Definir el inicio y fin de la animación basados en la longitud del pasillo.
 
 ---
-## 1.2 Áreas de aplicación
-Como ingenieros, aplicamos estos fundamentos en campos diversos:
+```python
+# Configuración de tiempos dentro de Blender
+pasos_por_bloque = 10 
+bpy.context.scene.frame_start = 1
+# El final depende del largo del pasillo por los pasos definidos
+bpy.context.scene.frame_end = largo * pasos_por_bloque
+```
+## 3. Generación Procedural de Materiales y Geometría
+El manejo de componentes en Blender implica crear materiales y mallas dinámicamente.
+**Guía de Componentes:**
+* **Materiales RGB:** Uso de diffuse_color para asignar colores a las paredes.
 
-* **CAD/CAM:** El diseño y manufactura asistida por computadora es la base de herramientas como Blender, utilizadas para crear prototipos industriales precisos.
+* **Cubes (Paredes):** Instanciación de cubos en posiciones calculadas con math.sin.
 
-* **Entretenimiento:** Renderizado de efectos visuales (VFX) y desarrollo de videojuegos de alto rendimiento.
+* **Planes (Suelo):** Escalado de un plano para cubrir la extensión total del recorrido.
 
-* **Medicina:** Reconstrucción de imágenes mediante tomografía (estándar DICOM) para diagnósticos precisos.
+---
+```python
+# Creación de materiales dinámicos
+def crear_material(nombre, color_rgb):
+    mat = bpy.data.materials.new(name=nombre)
+    mat.diffuse_color = (*color_rgb, 1.0) # RGBA
+    return mat
 
-* **GIS:** Sistemas de información geográfica que utilizan mapas 3D para análisis territorial.
-## 1.3 Aspectos matemáticos de la graficación
-Para que Blender logre posicionar y transformar los objetos mostrados en las prácticas, utiliza una base sólida de Álgebra Lineal y Trigonometría:
-* **Espacio 3D:** Los objetos viven en un sistema de coordenadas basado en vectores V = (x, y, z).
-* **Transformaciones:** Cada traslación, rotación o escala de un cubo o cono aplica internamente Matrices de Transformación sobre sus vértices.
-* **Trigonometría Circular:** Para el dibujo algorítmico de polígonos y flores, se depende de las funciones sin (seno) y cos (coseno) para convertir ángulos polares en coordenadas cartesianas espaciales.
-## 1.4 Modelos del color: RGB, CMY, HSV y HSL
-El color se procesa digitalmente mediante modelos matemáticos que interpretan la luz física:
-* **RGB (Red, Green, Blue):** Modelo aditivo estándar para monitores, donde cada canal varía de 0 a 1 (en la API de Blender) o de 0 a 255.
-* **CMY (Cyan, Magenta, Yellow):** Modelo sustractivo utilizado principalmente en la industria de la impresión.
-* **HSV (Hue, Saturation, Value):** Un modelo más intuitivo para el diseño, donde el Hue define el color en un círculo cromático de 0° a 360°.
-## Proyectos Integradores: De la Teoría a la Práctica en Blender
-A continuación, se detalla cómo los conceptos anteriores se materializan a través de código Python utilizando la librería bpy.
-### Proyecto 1: Creación Manual de Primitivos
-En esta práctica inicial se exploró la interfaz de Blender para comprender la estructura de los objetos.
+# Colocación de cubos en zigzag
+offset_x = math.sin(i * frecuencia) * amplitud
+bpy.ops.mesh.primitive_cube_add(location=(ancho_pasillo + offset_x, pos_y, 1))
+```
+## 4. Implementación de Lógica de Animación (Head Bobbing)
+Para lograr realismo, no basta con mover la cámara; se aplican funciones trigonométricas para simular el rebote de la caminata.
+### ¿Cómo funciona la oscilación?
 
-* Concepto: Se aprendió el uso del 3D Cursor como punto de anclaje para la instanciación de nuevos objetos en el espacio tridimensional.
+* **Eje Z (Rebote):** Simula el impacto del paso mediante una onda senoidal de alta frecuencia.
 
-* Visualización: En el modo edición, se identificó que todo objeto se compone de Vértices (puntos), Aristas (líneas) y Caras (superficies).
-### Proyecto 2: Generación Paramétrica de Polígonos 2D
-Este proyecto automatiza la creación de una malla (Mesh) desde cero aplicando la trigonometría del punto 1.3.
+* **Eje Y local (Roll):** Genera un balanceo lateral sutil.
+
+* **Look Ahead:** La cámara calcula la tangente del siguiente punto para rotar y "mirar" hacia la curva.
+
+---
+```python
+# Oscilación vertical (Z): Simula el rebote de la cabeza
+rebote_z = math.sin(i * 0.5) * 0.05 
+# Balanceo lateral (Roll): Pequeña rotación en el eje Y
+balanceo_roll = math.sin(i * 0.25) * 0.02
+```
+## 5. Gestión de Keyframes y Feedback Visual
+El manejo de eventos en Blender se traduce en la inserción de Keyframes. Cada iteración del ciclo calcula una posición y la "graba" en la línea de tiempo.
+### El proceso de Animación:
+
+1) Se calcula la ubicación (location) y rotación (rotation_euler).
+
+2) Se aplica al objeto cámara.
+
+3) Se inserta el fotograma clave para asegurar que Blender interpole el movimiento.
+
+---
+```python
+# Aplicar posición y rotación a la cámara
+cam.location = (offset_x, pos_y, 1.2 + rebote_z)
+# Insertar Keyframes en los canales correspondientes
+cam.keyframe_insert(data_path="location", frame=frame_actual)
+cam.keyframe_insert(data_path="rotation_euler", frame=frame_actual)
+```
+## 6. Diseño del Escenario en Zigzag
+Para que el pasillo no sea recto, se utiliza una función de frecuencia y amplitud que deforma el eje X a medida que avanzamos en el eje Y.
+### Instrucciones de Acomodo:
+
+* **Frecuencia:** Controla qué tan cerradas son las curvas.
+
+* **Amplitud:** Define qué tan ancho es el desplazamiento lateral del zigzag.
+## 7. Código Completo para Implementación
+A continuación, el script íntegro para ejecutar en el panel de Scripting de Blender:
 
 ---
 ```python
 import bpy
 import math
 
-def crear_poligono_2d(nombre, lados, radio):
-    # 1. Creación de la estructura de datos
-    malla = bpy.data.meshes.new(nombre) 
-    objeto = bpy.data.objects.new(nombre, malla) 
-    bpy.context.collection.objects.link(objeto) 
+def crear_material(nombre, color_rgb):
+    mat = bpy.data.materials.new(name=nombre)
+    mat.diffuse_color = (*color_rgb, 1.0)
+    return mat
+
+def animar_camara(largo, separacion_y, amplitud, frecuencia):
+    if "CamaraPasillo" in bpy.data.objects:
+        cam = bpy.data.objects["CamaraPasillo"]
+    else:
+        bpy.ops.object.camera_add()
+        cam = bpy.context.active_object
+        cam.name = "CamaraPasillo"
+
+    pasos_por_bloque = 10 
+    bpy.context.scene.frame_start = 1
+    bpy.context.scene.frame_end = largo * pasos_por_bloque
     
-    vertices = []
-    aristas = []
-    
-    # 2. Lógica Trigonométrica: Conversión de ángulos a coordenadas (x, y)
-    for i in range(lados):
-        angulo = 2 * math.pi * i / lados
-        x = radio * math.cos(angulo) 
-        y = radio * math.sin(angulo) 
-        vertices.append((x, y, 0)) 
+    for i in range((largo * pasos_por_bloque) + 1):
+        frame_actual = i
+        progreso = i / pasos_por_bloque
         
-    # 3. Definición de Aristas: Conexión secuencial de los puntos calculados
-    for i in range(lados):
-        aristas.append((i, (i + 1) % lados))
+        pos_y = progreso * separacion_y
+        offset_x = math.sin(progreso * frecuencia) * amplitud
         
-    malla.from_pydata(vertices, aristas, []) 
-    malla.update()
+        rebote_z = math.sin(i * 0.5) * 0.05 
+        balanceo_roll = math.sin(i * 0.25) * 0.02 
+        
+        cam.location = (offset_x, pos_y, 1.2 + rebote_z)
+        
+        siguiente_x = math.sin((progreso + 0.1) * frecuencia) * amplitud
+        tangente = (siguiente_x - offset_x) / 0.1
+        angulo_z = -math.atan(tangente)
+        
+        cam.rotation_euler = (math.radians(90), balanceo_roll, angulo_z)
+        cam.keyframe_insert(data_path="location", frame=frame_actual)
+        cam.keyframe_insert(data_path="rotation_euler", frame=frame_actual)
 
-crear_poligono_2d("Hexagono_TAP", lados=6, radio=5)
+def generar_escenario_zigzag():
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete()
+
+    mat_pared_a = crear_material("ParedOscura", (0.05, 0.05, 0.05))
+    mat_pared_b = crear_material("ParedDetalle", (0.8, 0.2, 0.0))
+
+    largo_pasillo = 30
+    ancho_pasillo = 3
+    amplitud = 2.5
+    frecuencia = 0.4
+    separacion_y = 2
+
+    for i in range(largo_pasillo):
+        offset_x = math.sin(i * frecuencia) * amplitud
+        pos_y = i * separacion_y
+        
+        bpy.ops.mesh.primitive_cube_add(location=(-ancho_pasillo + offset_x, pos_y, 1))
+        p_izq = bpy.context.active_object
+        p_izq.data.materials.append(mat_pared_a if i % 2 == 0 else mat_pared_b)
+        
+        bpy.ops.mesh.primitive_cube_add(location=(ancho_pasillo + offset_x, pos_y, 1))
+        p_der = bpy.context.active_object
+        p_der.data.materials.append(mat_pared_a)
+
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, (largo_pasillo * separacion_y) / 2, 0))
+    suelo = bpy.context.active_object
+    suelo.scale.x = 20
+    suelo.scale.y = largo_pasillo * separacion_y
+
+    animar_camara(largo_pasillo, separacion_y, amplitud, frecuencia)
+
+generar_escenario_zigzag()
 ```
-<img width="1582" height="1020" alt="image" src="https://github.com/user-attachments/assets/d7ce8829-da3d-4f83-8e35-c0f44018ee11" />
+## 8. Resolución de Problemas Comunes (Troubleshooting)
+**❌ Problema 1: La cámara no se mueve o no tiene keyframes**
 
-----
-## Proyecto 3: La Flor de la Vida (Patrones Iterativos)
-Demuestra el uso de ciclos while para generar arte generativo variando el paso_angular.
+* **Causa:** No seleccionar la cámara antes de ejecutar o error en el nombre del objeto.
 
----
-```python
-import bpy
-import math
+* **Solución:** Verificar que el data_path en keyframe_insert sea exactamente "location" o "rotation_euler".
+**❌ Problema 2: El zigzag es demasiado brusco**
 
-# Parámetros esenciales
-radio = 3
-angulo_actual = 0
-paso_angular = 60 
+* **Causa:** Valores de frecuencia muy altos.
 
-# 1. Círculo Base central
-bpy.ops.mesh.primitive_circle_add(radius=radio, location=(0,0,0), vertices=64)
+* **Solución:** Reducir el valor de la variable frecuencia (ej. 0.2 en lugar de 0.8).
 
-# 2. Ciclo de Generación Perimetral: Distribución de círculos en órbita
-while angulo_actual < 360:
-    x = radio * math.cos(math.radians(angulo_actual))
-    y = radio * math.sin(math.radians(angulo_actual))
-    
-    # Operador para añadir geometría instantánea en las coordenadas calculadas
-    bpy.ops.mesh.primitive_circle_add(radius=radio, location=(x, y, 0), vertices=64)
-    angulo_actual += paso_angular
-```
-### Resultado:
-<img width="1590" height="1083" alt="Captura de pantalla 2026-02-11 205513" src="https://github.com/user-attachments/assets/8bada1c9-a767-4c12-a992-e6c19c8ff35a" />
+**❌ Problema 3: Blender se congela al ejecutar**
 
----
+* **Causa:** Demasiados pasos de animación o largo de pasillo excesivo.
 
-**Nota Técnica:** El comando math.radians() es indispensable porque las funciones trigonométricas de Python requieren radianes, mientras que la lógica humana suele trabajar en grados sexagesimales.
-## 1.5 Representación de líneas y polígonos
-Como se observó en los scripts, un modelo 3D es una estructura llamada Mesh:
+* **Solución:** Reducir largo_pasillo para pruebas rápidas.
+## 9. Glosario de Términos Técnicos Aplicados
+* **Head Bobbing:** Técnica de animación que simula el movimiento de la cabeza al caminar.
 
-* Vertices: La unidad mínima de posición.
+* **Keyframe:** Fotograma clave que define el estado de una propiedad en un tiempo específico.
 
-* Edges (Aristas): Conexión entre dos vértices.
+* **Tangente:** Línea que toca una curva; usada aquí para orientar la rotación de la cámara hacia adelante.
 
-* Faces (Caras): Polígonos cerrados por aristas.
+* **bpy (Blender Python):** API oficial para controlar Blender mediante scripts.
 
-### 1.5.1 Formatos de imagen
-* Raster: Matrices de píxeles ideales para texturas complejas.
+* **Euler Rotation:** Sistema de rotación basado en tres ángulos (X, Y, Z).
+## Conclusión del Proyecto Integrador
+La realización de este escenario procedural representa la integración definitiva de los conceptos de geometría computacional y animación paramétrica estudiados en esta unidad. Como estudiante de sistemas, este proyecto me permitió comprender que el entorno de Blender no es solo una herramienta de diseño manual, sino un motor potente que puede ser controlado mediante scripts de Python para generar mundos complejos de forma eficiente y reproducible.
 
-* Vectores: Instrucciones matemáticas que generan geometría perfecta, como el código desarrollado en los proyectos.
-## 1.6 Procesamiento de mapas de bits y Post-procesamiento
-Una vez que la geometría (vectorial) es procesada por el motor de renderizado de Blender (Eeevee o Cycles), se convierte en un mapa de bits (ráster). En esta etapa, el trabajo del ingeniero no termina con el modelo 3D, sino con la manipulación de la imagen final.
+Uno de los mayores aprendizajes fue la implementación técnica del Head Bobbing y el balanceo de cámara. A través de funciones trigonométricas ($\sin$ y $\cos$), logramos transformar un movimiento lineal rígido en una simulación orgánica que emula la percepción humana al caminar. Asimismo, el cálculo de la tangente para orientar la rotación de la cámara conforme avanza el zigzag demuestra cómo el cálculo matemático es el núcleo que da coherencia visual a cualquier animación procedural.
 
-Blender integra un potente Compositor de Nodos, que permite aplicar técnicas de Procesamiento Digital de Imágenes (PDI) sobre el renderizado:
-* **Filtros de Convolución:** Aplicación de desenfoques (Bloom/Blur) para simular efectos ópticos de lentes reales.
+Finalmente, este proyecto refuerza la importancia del Manejo de Componentes y Estados en el desarrollo de software gráfico. Desde la creación automatizada de materiales hasta la gestión precisa de Keyframes en la línea de tiempo, queda claro que la programación es el puente que permite automatizar tareas creativas, reduciendo el margen de error y permitiendo la creación de escenarios que serían sumamente tediosos de modelar y animar cuadro por cuadro. Esta base técnica es fundamental para abordar retos futuros en áreas como la simulación, la realidad virtual y el desarrollo de motores de juegos.
 
-* **Corrección de Color:** Manipulación de los canales RGB y los modelos HSV para ajustar el contraste, la saturación y el balance de blancos de la imagen final.
-
-* **Capas de Render (Render Layers):** Permite separar elementos (sombras, reflejos, objetos) para procesarlos de forma independiente antes de unirlos en la imagen definitiva.
-
-* **Efectos de Lente:** Introducción de aberración cromática, viñeteado o distorsión para aumentar el fotorrealismo de la composición.
-Este procesamiento transforma datos geométricos matemáticamente exactos en una representación visual con valor estético y técnico.
-## Conclusión 
-La finalización de esta unidad nos permite comprender que la Graficación por Computadora no es simplemente el acto de "dibujar" en una pantalla, sino un campo complejo de la ingeniería que integra matemáticas avanzadas, algoritmos de optimización y modelos físicos de la luz. A través del estudio de la historia y evolución de esta disciplina, queda claro cómo el desarrollo de estándares como OpenGL y el poder de procesamiento de las GPUs han democratizado la creación de entornos fotorrealistas que hoy aplicamos en medicina, ingeniería y entretenimiento.<br>
-<br>Uno de los aprendizajes más significativos fue la conexión entre la teoría matemática y la programación. Entender que la posición de cada vértice en nuestros proyectos de Blender depende de matrices de transformación y funciones trigonométricas (sin y cos) nos otorga un control total sobre la geometría. El uso del lenguaje Python y la API bpy demostró ser una herramienta poderosa para automatizar la creación de formas paramétricas, como el polígono 2D y la Flor de la Vida, donde la precisión algorítmica supera las capacidades del modelado manual.<br>
-<br>Finalmente, el estudio de los modelos de color (RGB, HSV) y el procesamiento de mapas de bits nos enseñó que el trabajo del ingeniero no termina con la generación de la malla, sino con el post-procesamiento de la imagen final. La capacidad de manipular una imagen mediante el compositor de nodos de Blender para aplicar filtros y correcciones de color cierra el ciclo de producción gráfica, transformando datos matemáticos en una representación visual profesional. En conjunto, esta unidad establece las bases técnicas necesarias para abordar retos más complejos en la simulación y la visualización digital avanzada.
-## Bibliografía (APA)
-* Hearn, D., & Baker, M. P. (2006). Computer Graphics with OpenGL. Pearson Education.
-
-* Blender Foundation. (2026). Blender 4.3 Reference Manual: Scripting & Python. https://docs.blender.org/
-
-* Pérez, J. (2024). Matemáticas para graficación 3D. Scribd.
-
-* YouTube. (s.f.). Blender Python Scripting Tutorial.
