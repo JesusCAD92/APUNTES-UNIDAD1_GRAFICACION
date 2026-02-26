@@ -163,6 +163,14 @@ def generar_escenario_zigzag():
 
 generar_escenario_zigzag()
 ```
+### Resultado grafico:
+<img width="1153" height="842" alt="image" src="https://github.com/user-attachments/assets/4c31501c-e4f5-447e-801b-1b3aed6f5b70" />
+
+
+https://github.com/user-attachments/assets/9d87853a-ca44-4d07-aeb7-830045265ec8
+
+
+
 ## 8. Resolución de Problemas Comunes (Troubleshooting)
 **❌ Problema 1: La cámara no se mueve o no tiene keyframes**
 
